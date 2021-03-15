@@ -68,7 +68,7 @@ namespace FeedsBL
 
             string strUrls = config0.GetValue<string>("ApplicationUrl") ?? "";
             string[] urls = strUrls.Split(",".ToCharArray(),
-                    System.StringSplitOptions.RemoveEmptyEntries);
+                    StringSplitOptions.RemoveEmptyEntries);
             return urls;
         }
     }

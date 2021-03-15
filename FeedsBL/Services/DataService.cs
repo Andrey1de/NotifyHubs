@@ -86,7 +86,7 @@ namespace FeedsBL
             {
                  outNote = sameValue;
                 Log.LogInformation($"Notify Retrieved:{outNote.FileName}  :");
-                Log.LogDebug($"{outNote.JBody}");
+                Log.LogInformation($"{outNote.JBody}");
                 return false; ;
             }
             newNote.ID = (dictionary.Count > 0) ? (dictionary.Keys.Max() + 1) : 1 ;
@@ -121,7 +121,7 @@ namespace FeedsBL
                     }
                 }
                 idDir++;
-                string saveDir = Path.Combine(BaseStoreDirectory, idDir.ToString("D4"));
+                string saveDir = Path.Combine(base0, idDir.ToString("D4"));
                 if (!Directory.Exists(saveDir))
                 {
                     Directory.CreateDirectory(saveDir);
@@ -131,7 +131,7 @@ namespace FeedsBL
      
                 File.WriteAllText(notify.FileName, notify.JBody);
                 Log.LogInformation($"Notify Stored:{notify.FileName} stored :");
-                Log.LogDebug($"{notify.JBody}");
+                Log.LogInformation($"{notify.JBody}");
 
             }
             catch (Exception)

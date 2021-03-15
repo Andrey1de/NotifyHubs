@@ -44,7 +44,6 @@ namespace FeedsBL.Controllers
         // GET api/<NotificationController>/5
         [HttpGet()]
         [Route("{id}")]
-
         public ActionResult<object> Get (int id)
         {
             Notification notify = Dal.Get(id);
@@ -83,11 +82,11 @@ namespace FeedsBL.Controllers
         {
             if (Dal.Remove(id))
             {
-                Log.LogDebug($"Delete {id} OK");
+                Log.LogInformation($"Delete {id} OK");
 
                 return Ok();
             }
-            Log.LogDebug($"Delete {id} FAILED");
+            Log.LogInformation($"Delete {id} FAILED");
 
             return NotFound();  
         }

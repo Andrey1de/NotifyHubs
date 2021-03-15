@@ -11,15 +11,12 @@ namespace FeedsBL
 {
     public class Startup
     {
-        public readonly string AngularClienURL = "";
+        public readonly string AngularClientURL = "";
         public readonly bool ToUseProxyAngularClient;//= Configuration.GetValue<bool>("ToUseProxyAngularClient");
-
-
-
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
-            AngularClienURL = Configuration.GetValue<string>("AngularClienURL")
+            AngularClientURL = Configuration.GetValue<string>("AngularClienURL")
                                                 ?? "http://localhost:4200";
             ToUseProxyAngularClient = Configuration.GetValue<bool>("ToUseProxyAngularClient");
         }
@@ -29,6 +26,14 @@ namespace FeedsBL
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddCors(options =>
+            {
+                options.AddPolicy("CorsPolicy", builder => builder
+                                        .WithOrigins(AngularClientURL)
+                                        .AllowAnyMethod()
+                                        .AllowAnyHeader()
+                                        .AllowCredentials());
+                                    });
             services.AddSingleton<IDataService,DataService>();
 
             services.AddControllersWithViews()
@@ -52,7 +57,7 @@ namespace FeedsBL
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-                if (env.IsDevelopment())
+            if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
@@ -71,7 +76,7 @@ namespace FeedsBL
             }
 
             app.UseRouting();
-
+            app.UseCors("CorsPolicy");
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllerRoute(
@@ -86,11 +91,11 @@ namespace FeedsBL
 
                 spa.Options.SourcePath = "ClientApp";
                 //HACK
-                if (false && !string.IsNullOrWhiteSpace(AngularClienURL) &&  env.IsDevelopment())
+                if (false && !string.IsNullOrWhiteSpace(AngularClientURL) &&  env.IsDevelopment())
                 {
                     if ( ToUseProxyAngularClient)
                     {
-                        spa.UseProxyToSpaDevelopmentServer(AngularClienURL);
+                        spa.UseProxyToSpaDevelopmentServer(AngularClientURL);
                     }
                     else
                     {

@@ -18,21 +18,22 @@ namespace FeedsBL.Models
         }
         public Notification()
         {
-            Uid = Guid.NewGuid();
-            RandomString = Convert.ToBase64String(Uid.ToByteArray()).Substring(0, 8);
+            var uid = Guid.NewGuid();
+
+            //RandomString = uid.ToString().Replace("-", string.Empty)
+            //    .Replace("+", string.Empty).Substring(0, 8).ToLower();
+            RandomString = Convert.ToBase64String(uid.ToByteArray()).Substring(0, 10).ToLower();
         }
         public Notification(string type, object body)
+            : this()
         {
-             type = Twitter;
-            if (type.StartsWith("twi",StringComparison.InvariantCultureIgnoreCase))
-            {
-            }
-            else if (type.StartsWith("face", StringComparison.InvariantCultureIgnoreCase))
+              type = Twitter;
+            if (type.StartsWith("face", StringComparison.InvariantCultureIgnoreCase))
             {
                 type = Facebook;
             }
-          
-            ID = 0;
+              
+              ID = 0;
             JBody = JsonSerializer.Serialize(body,JSO);
 
             Body = JsonSerializer.Deserialize<object>(JBody);

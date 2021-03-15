@@ -27,7 +27,7 @@ namespace FeedsBL.Models
         public Notification(string type, object body)
             : this()
         {
-              type = Twitter;
+              type = Twitter;   
             if (type.StartsWith("face", StringComparison.InvariantCultureIgnoreCase))
             {
                 type = Facebook;

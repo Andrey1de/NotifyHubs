@@ -28,6 +28,8 @@ Tmp/
 
 # Visual Studio 2015 cache/options directory
 .vs/
+# Don't forget !!!!
+FeedsShared/
 
 # MSTest test Results
 [Tt]est[Rr]esult*/

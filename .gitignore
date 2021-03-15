@@ -23,6 +23,8 @@ bin/
 Bin/
 obj/
 Obj/
+tmp/
+Tmp/
 
 # Visual Studio 2015 cache/options directory
 .vs/

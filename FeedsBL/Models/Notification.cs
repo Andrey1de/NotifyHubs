@@ -27,11 +27,8 @@ namespace FeedsBL.Models
         public Notification(string type, object body)
             : this()
         {
-              type = Twitter;   
-            if (type.StartsWith("face", StringComparison.InvariantCultureIgnoreCase))
-            {
-                type = Facebook;
-            }
+            type = (type.StartsWith("face", StringComparison.InvariantCultureIgnoreCase)) ?
+                Facebook : Twitter;
               
               ID = 0;
             JBody = JsonSerializer.Serialize(body,JSO);

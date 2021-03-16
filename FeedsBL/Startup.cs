@@ -4,7 +4,10 @@ using Microsoft.AspNetCore.SpaServices.AngularCli;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
+using System;
+using System.Diagnostics;
 using System.Text.Json;
 
 namespace FeedsBL
@@ -13,10 +16,12 @@ namespace FeedsBL
     {
         public readonly string AngularClientURL = "";
         public readonly bool ToUseProxyAngularClient;//= Configuration.GetValue<bool>("ToUseProxyAngularClient");
-        public Startup(IConfiguration configuration)
+       // public readonly ILogger<Startup> Log;
+        public Startup(IConfiguration configuration)//, ILogger<Startup> log)
         {
+           
             Configuration = configuration;
-            AngularClientURL = Configuration.GetValue<string>("AngularClienURL")
+            AngularClientURL = Configuration.GetValue<string>("AngularClientURL")
                                                 ?? "http://localhost:4200";
             ToUseProxyAngularClient = Configuration.GetValue<bool>("ToUseProxyAngularClient");
         }
@@ -60,14 +65,15 @@ namespace FeedsBL
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
+                app.UseSwagger();
+                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "WebApplication3 v1"));
+                Console.WriteLine($"You may open Swagger  : {Program.ApplicationUrls[0]}/swagger ");
             }
             else
             {
                 app.UseExceptionHandler("/Error");
             }
 
-            app.UseSwagger();
-            app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "WebApplication3 v1"));
 
             app.UseStaticFiles();
             if (!env.IsDevelopment())
@@ -88,19 +94,27 @@ namespace FeedsBL
             {
                 // To learn more about options for serving an Angular SPA from ASP.NET Core,
                 // see https://go.microsoft.com/fwlink/?linkid=864501
-
+               // http://localhost:55000/swagger/index.html
                 spa.Options.SourcePath = "ClientApp";
-                //HACK
-                if (false && !string.IsNullOrWhiteSpace(AngularClientURL) &&  env.IsDevelopment())
+                spa.Options.DevServerPort = new Uri(AngularClientURL).Port;
+
+                   //HACK
+                if (!string.IsNullOrWhiteSpace(AngularClientURL) &&  env.IsDevelopment())
                 {
-                    if ( ToUseProxyAngularClient)
+                    if (ToUseProxyAngularClient)
                     {
+                        Console.WriteLine($"Proxy to Spa  : {AngularClientURL} open it manualy");
+
                         spa.UseProxyToSpaDevelopmentServer(AngularClientURL);
-                    }
+                       }
                     else
                     {
+                        Console.WriteLine($"Wait for translate and open ClientApp : {AngularClientURL} in default browser");
                         spa.UseAngularCliServer(npmScript: "start");
-                    }
+                     }
+
+        
+
                 }
             });
         }

@@ -45,7 +45,7 @@ namespace FeedsBL
             Log = log;
             if (!maxTimeTo.HasValue)
             {
-                maxTimeTo = TimeSpan.FromSeconds(config.GetValue<int>("MaxTimeTo"));
+                maxTimeTo = TimeSpan.FromSeconds(config.GetValue<int>("MaxTimeToSec"));
             }
         }
 
@@ -95,23 +95,79 @@ namespace FeedsBL
                 newNote.ID++;
             }
             outNote = newNote;
-            StoreNotification(newNote);
+            if (StoreNotification(newNote) != null) { 
+            }
             return true;
 
         }
-      
-        private void StoreNotification(Notification notify)
+
+        static object _lockTryCreateDir = new object();
+
+
+        private Exception StoreNotification(Notification notify)
         {
+            string saveDir = null;
             try
             {
-                string base0 = Path.Combine(BaseStoreDirectory, notify.Type);
-                if (!Directory.Exists(base0)){
-                    Directory.CreateDirectory(base0);
-                }
+                  lock (_lockTryCreateDir)
+                 {
+                   
+                    if(!TryCreateDir(notify, out saveDir))
+                    {
+                        throw new ApplicationException($"TryCreateDir({notify.JBody} failed");
+                    }
 
-                string[] dirs =  Directory.GetDirectories(base0);
-                int idDir = 0;
-                if(dirs != null && dirs.Length > 0)
+                 }
+                notify.FileName = Path.Combine(saveDir, notify.RandomString + ".notification.json");
+
+                File.WriteAllText(notify.FileName, notify.JBody);
+                Log.LogInformation($"Notify Stored:{notify.FileName} stored :");
+                Log.LogInformation($"{notify.JBody}");
+
+            }
+            catch (Exception ex)
+            {
+                Log.LogError($"Error{ex.StackTrace}");
+                if (!string.IsNullOrWhiteSpace(saveDir) &&   Directory.Exists(saveDir))
+                {
+                    try
+                    {
+                        Directory.Delete(saveDir, true);
+                    }
+                    catch (Exception)
+                    {
+
+                       //throw;
+                    }
+                }
+                return ex;
+            }
+            return null;
+        }
+
+        static int _numDirTwitter = 0;
+        static int _numDirFacebook = 0;
+     
+        private bool TryCreateDir(Notification notify, out string saveDir)
+        {
+            string base0 = Path.Combine(BaseStoreDirectory, notify.Type);
+            if (!Directory.Exists(base0))
+            {
+                Directory.CreateDirectory(base0);
+            }
+            bool isTwitter = notify.IsTwitter;
+
+
+            ref int idDir = ref _numDirFacebook;
+            if (notify.IsTwitter)
+            {
+                idDir = ref _numDirTwitter;
+            }
+
+            if(idDir <= 0)
+            {
+                string[] dirs = Directory.GetDirectories(base0);
+                if (dirs != null && dirs.Length > 0)
                 {
                     foreach (var dir in dirs)
                     {
@@ -120,27 +176,19 @@ namespace FeedsBL
                         idDir = Math.Max(int.Parse(arrr[arrr.Length - 1]), idDir);
                     }
                 }
-                idDir++;
-                string saveDir = Path.Combine(base0, idDir.ToString("D4"));
-                if (!Directory.Exists(saveDir))
-                {
-                    Directory.CreateDirectory(saveDir);
-                }
-
-                notify.FileName = Path.Combine(saveDir,notify.RandomString + ".notification.json");
-     
-                File.WriteAllText(notify.FileName, notify.JBody);
-                Log.LogInformation($"Notify Stored:{notify.FileName} stored :");
-                Log.LogInformation($"{notify.JBody}");
 
             }
-            catch (Exception)
+            idDir++;
+            saveDir = Path.Combine(BaseStoreDirectory,notify.Type , idDir.ToString("D4"));
+            if (!Directory.Exists(saveDir))
             {
-
-                throw;
+                Directory.CreateDirectory(saveDir);
+                return true;
+    
             }
+            //Directory just was created;
+            return false;
         }
-
 
         public bool Remove(int id)
         {

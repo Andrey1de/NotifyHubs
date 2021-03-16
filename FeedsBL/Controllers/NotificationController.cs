@@ -55,22 +55,27 @@ namespace FeedsBL.Controllers
             return NotFound(id);
         }
 
+     //   static object _lockInsert = new object();
         // POST api/<NotificationController>
         [HttpPost]
         [Route("insert/{type}")]
         public ActionResult<object> Insert(string type, [FromBody] object body)
         {
-            Notification notify = null;
-            try
-            {
-                Dal.TryInsert(type, body, out notify);
-                return Ok(notify.Body);
-           }
-            catch (Exception ex)
-            {
-                Log.LogError(ex.StackTrace);
-                throw ex;
-            }
+         //   lock (_lockInsert)
+           // {
+                Notification notify = null;
+                try
+                {
+                    Dal.TryInsert(type, body, out notify);
+                    return Ok(notify.Body);
+                }
+                catch (Exception ex)
+                {
+                    Log.LogError(ex.StackTrace);
+                    throw ex;
+                }
+         //   }
+     
         }
 
 

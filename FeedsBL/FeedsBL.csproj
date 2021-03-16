@@ -20,13 +20,23 @@
 
   <ItemGroup>
     <!-- Don't publish the SPA source files, but do show them in the project files list -->
+    <Compile Remove="tmp\**" />
     <Content Remove="$(SpaRoot)**" />
+    <Content Remove="tmp\**" />
+    <EmbeddedResource Remove="tmp\**" />
     <None Remove="$(SpaRoot)**" />
+    <None Remove="tmp\**" />
     <None Include="$(SpaRoot)**" Exclude="$(SpaRoot)node_modules\**" />
   </ItemGroup>
 
   <ItemGroup>
     <Compile Remove="Controllers\WeatherForecastController.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>

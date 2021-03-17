@@ -10,25 +10,31 @@
       <div class="form-group">
 
         <div>
-          <label for="typeNotify">Type Notify:</label>
-          <select [(ngModel)]="typeNotify" class="form-control">
-            <option value="Twitter" selected="true">Twitter</option>
-            <option value="Facebook" selected="true">Facebook</option>
-          </select>
+          <label for="typeNotify">
+            <select [(ngModel)]="typeNotify" class="form-control-lg">
+              <option value="Twitter" selected="true">Twitter</option>
+              <option value="Facebook" selected="true">Facebook</option>
+            </select>
+            &nbsp;:Type Notify
+          </label>
         </div>
  
-        <label for="toAutoUpdate">Auto Update </label>
-        <input type="checkbox" [(ngModel)]="toAutoUpdate"
-            class="form-control"> 
-        <label for="authorID">Author ID:</label>
+        <div>
+          <label class="form-control-lg" for="toAutoUpdate" style="border-color: white;">
+            <input type="checkbox" [(ngModel)]="toAutoUpdate"> 
+            &nbsp; Auto Update 
+          </label>
+        </div>
+
+       <label for="authorID">Author ID:</label>
         <input type="text" [(ngModel)]="authorID"
-               class="form-control"> 
+               class="form-control-lg"> 
         <label for="numID">ID:</label>
         <input type="text" [(ngModel)]="numID"
-               readonly="true" class="form-control"> 
+               readonly="true" class="form-control-lg"> 
         <div  class="sub-heading">Text Area Input Field</div>
         <textarea class ="text-area" [(ngModel)]="textMessage" 
-        cols="40" rows="6" class="form-control"></textarea>
+        cols="40" rows="6" class="form-control-lg"></textarea>
 
     <!-- <input type="text" formControlName="pairsDelim"
                > -->

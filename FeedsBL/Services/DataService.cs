@@ -17,7 +17,7 @@ namespace FeedsBL
 
         public NotificationADO[] List();
         public NotificationADO Get(Guid guid);
-        public bool TryInsert(string type, object JMessage, out NotificationADO outNote);
+        public string TryInsert(string type, object JMessage, out NotificationADO outNote);
        public bool Remove(Guid guid);
 
         public int Count { get;  }
@@ -27,12 +27,12 @@ namespace FeedsBL
 
     public class DataService : IDataService
     {
-        TimeSpan? maxTimeTo = null;
+        double? maxTimeToSec = null;
         readonly ILogger<DataService> Log;
         readonly string BaseStoreDirectory; 
 
 
-        readonly ConcurrentDictionary<Guid, NotificationADO> dictionary = 
+        readonly static  ConcurrentDictionary<Guid, NotificationADO> dictionary = 
                             new ConcurrentDictionary<Guid, NotificationADO>();
         public DataService(IConfiguration config,
             ILogger<DataService> log)
@@ -44,9 +44,9 @@ namespace FeedsBL
                 Directory.CreateDirectory(BaseStoreDirectory);
             }
             Log = log;
-            if (!maxTimeTo.HasValue)
+            if (!maxTimeToSec.HasValue)
             {
-                maxTimeTo = TimeSpan.FromSeconds(config.GetValue<int>("MaxTimeToSec"));
+                maxTimeToSec = config.GetValue<int>("MaxTimeToSec");
             }
         }
 
@@ -71,46 +71,58 @@ namespace FeedsBL
             }
             return null;
         }
+       
+        /// <summary>
+        /// Retuens error description or empty string;
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="body"></param>
+        /// <param name="outNote"></param>
+        /// <param name=""></param>
+        /// <returns></returns>
 
-        public  bool TryInsert(string type, object body, out NotificationADO outNote)
+        public  string TryInsert(string type, object body, out NotificationADO outNote )
         {
+            string ret = "";
             type = ("" + type).Trim().ToLower();
             outNote = null;
             if (!type.StartsWith("twi") && !type.StartsWith("face"))
             {
-                 return false;
+                 return $"Type {type} is not suitable";
             }
 
 
             Notification note = new Notification(type, body);
             NotificationADO newNote = new NotificationADO( note);
             //Get All with creation time bigger than Now - 60 sec
-            NotificationADO[] lastValues = dictionary.Values
-                  .Where(p => p.Created >= DateTime.Now - TimeSpan.FromSeconds(60)).ToArray();
-            //If exists same notify
-            // Notification sameValue = lastValues.FirstOrDefault(p => newNote.Compare(p));
+            NotificationADO[] lastValues = dictionary.Values.ToArray();
+   
             for (int i = 0; i < lastValues.Length; i++)
             {
                 var p = lastValues[i];
+                var dat0 = DateTime.Now;
+                double delDSec = (dat0 - p.Created).TotalMilliseconds;
                 if (newNote.Type == p.Type &&
-                    newNote.JMessage == p.JMessage)
+                     delDSec < maxTimeToSec * 1000 &&
+                    newNote.JMessage == p.JMessage  )
                 {
                     outNote = p;
-                    Log.LogInformation($"Notify Retrieved:{outNote.FileName}  :");
-                    Log.LogInformation($"{outNote.ToString()}");
+                    var secs =(int)(0.5 + delDSec / 1000.0);
+                    string err = $"Notify Retrieved:{outNote.FileName}: \nafter creation spawns {secs} sec < {maxTimeToSec}  :";
+                    Log.LogWarning(err);
+                    Log.LogInformation($"{outNote.JMessage}");
 
-                    return false;
+                    return err;
                 }
             }
-       
-     
+      
             dictionary.TryAdd(newNote.Uid, newNote);
             outNote = newNote;
-            if (StoreNotification(newNote) != null) {
-                return true;
+            if (StoreNotification(newNote)== null) {
+                return String.Empty;
             }
 
-            return false;
+            return "Error to store";
         }
 
         static object _lockTryCreateDir = new object();
@@ -199,7 +211,7 @@ namespace FeedsBL
             saveDir =  Path.Combine(BaseStoreDirectory,notify.Type , idDir.ToString("D4"));
             if (!Directory.Exists(notify.FileName))
             {
-                Directory.CreateDirectory(notify.FileName);
+                Directory.CreateDirectory(saveDir);// notify.FileName);
                 return true;
     
             }
@@ -218,15 +230,7 @@ namespace FeedsBL
             throw new NotImplementedException();
         }
 
-        bool IDataService.TryInsert(string type, object JMessage, out NotificationADO outNote)
-        {
-            throw new NotImplementedException();
-        }
-
-        bool IDataService.Remove(Guid guid)
-        {
-            throw new NotImplementedException();
-        }
+     
     }
 
 

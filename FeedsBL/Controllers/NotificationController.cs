@@ -14,8 +14,27 @@ using FeedsBL.Models;
 
 namespace FeedsBL.Controllers
 {
+   /// <summary>
+   /// Tramsport class used for serialization
+   /// </summary>
+    public class RetWithGuid
+    {
+        public Guid guid { get; set; } = Guid.Empty;
+        public object body { get; set; }
+        public RetWithGuid()
+        {
 
- 
+        }
+        public RetWithGuid(NotificationADO note)
+        {
+            guid = note.Uid;
+            body = note.GetBody();
+        }
+    }
+
+    /// <summary>
+    /// Main controller to operate with Notification storage
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     public class NotificationController : ControllerBase
@@ -30,58 +49,84 @@ namespace FeedsBL.Controllers
         {
             Log = log;
             Dal = dataService;
-         }
+        }
 
-      
+        /// <summary>
+        /// Retrieves the list of the existing objects
+        /// </summary>
+        /// <returns></returns>
         [HttpGet]
         [Route("list")]
-        public ActionResult<object[]> List()
+        public ActionResult<RetWithGuid[]> List()
         {
-            var ret = Dal.List().Select(p=>p.GetBody()).ToArray();
+            var ret = Dal.List().Select(p => new RetWithGuid(p))
+                    .ToArray();
             return Ok(ret);
-         }
+        }
 
-        // GET api/<NotificationController>/5
+        /// <summary>
+        /// Retrieves the object with attached guidS
+        /// </summary>
+        /// <param name="guid"></param>
+        /// <returns></returns>
+        // GET api/Notification/guid
         [HttpGet()]
         [Route("{id}")]
-        public ActionResult<object> Get (Guid guid)
+        public ActionResult<RetWithGuid> Get(Guid guid)
         {
             NotificationADO notify = Dal.Get(guid);
 
             if (notify != null)
             {
-                return Ok(notify.JMessage);
+                return Ok(new RetWithGuid(notify));
             }
-            return NotFound(guid);
+            return NotFound($"Object {guid.ToString()} not been stored ");
         }
 
-     //   static object _lockInsert = new object();
+    
+        /// <summary>
+        /// Returns Guid if Inserded success otherwise error 409 and Empty Guid
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="body"></param>
+        /// <returns></returns>
         // POST api/<NotificationController>
         [HttpPost]
         [Route("insert/{type}")]
-        public ActionResult<object> Insert(string type, [FromBody] object body)
+        public ActionResult<RetWithGuid> Insert(string type, [FromBody] object body)
         {
          //   lock (_lockInsert)
            // {
                 NotificationADO notify = null;
                 try
                 {
-                    Dal.TryInsert(type, body, out notify);
-                    return Ok(notify.JMessage);
-                }
+                    string err = Dal.TryInsert(type, body, out notify);
+                    if (string.IsNullOrEmpty(err))
+                    {
+                        return Ok(new RetWithGuid(notify));
+                    }
+                    return NotFound(err);
+                    //new RetWithGuid() { guid = Guid.Empty, body = body });
+                 }
                 catch (Exception ex)
                 {
                     Log.LogError(ex.StackTrace);
-                return this.NoContent();
-                   // throw ex;
+                    return this.NotFound($"Error occures {ex.StackTrace}");
+                    
+               
                 }
          //   }
      
         }
 
 
-
-        // DELETE api/<NotificationController>/5
+        /// <summary>
+        /// Deletes the selected object by Guid
+        /// If Guid == Guid.Empty - cleares all the store
+        /// </summary>
+        /// <param name="guid"></param>
+        /// <returns></returns>
+        // DELETE api/Notification/guid/
         [HttpDelete()]
         [Route("delete/{id}")]
         public ActionResult Delete(string guid)

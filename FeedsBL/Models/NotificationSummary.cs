@@ -7,7 +7,7 @@ namespace FeedsBL.Models
     public class NotificationSummary
     {
         private static readonly JsonSerializerOptions JSO =
-                 new JsonSerializerOptions() { WriteIndented = true };
+                 Notification.JSO;
         public Guid Uid { get; private set; }
         public int NumberOfWords { get; private set; }
         public DateTime Created { get; private set; }

@@ -6,11 +6,8 @@ namespace FeedsBL.Models
 {
     public class  NotificationADO
     {
-         const string Facebook = "Facebook";
-         const string Twitter = "Twitter";
 
-        private static readonly JsonSerializerOptions JSO =
-             new JsonSerializerOptions() { WriteIndented = true };
+        private static readonly JsonSerializerOptions JSO = Notification.JSO;
 
         public Guid Uid { get; private set; }
         public string Type { get; private set; }
@@ -18,11 +15,11 @@ namespace FeedsBL.Models
         public string Text { get; private set; }
         public string FileName { get;  set; }
 
-        public readonly string RandomString;
-        public DateTime Created { get; private set; }
+          public DateTime Created { get; private set; }
         public int NumberOfWords { get; private set; }
-        public bool IsFacebook => Type == Facebook;
-        public bool IsTwitter => Type == Twitter;
+        public bool IsFacebook => Type == Notification.FaceBook;
+        public bool IsTwitter => Type == Notification.Twitter;
+        public readonly string RandomString;
 
         private object _body;
         
@@ -33,20 +30,28 @@ namespace FeedsBL.Models
 
         public NotificationADO(Notification note)
         {
-            Uid = note.Uid;
+             Uid = note.Uid;
+            RandomString = Convert.ToBase64String(Uid.ToByteArray()).Substring(0, 10).ToLower();
+
             JMessage = note.JMessage;
-            Type = note.Type;
-            //_body = note.Body;
-            JsonDocument doc = JsonDocument.Parse(JMessage);
-            JsonElement root = doc.RootElement;
+             Type = note.Type;
+             _body = note.Body;
+
+             JsonDocument doc = JsonDocument.Parse(JMessage);
+             JsonElement root = doc.RootElement;
               if (note.IsTwitter)
-            {
+             {
                 root = root.GetProperty("data");
                 Text =  root.GetProperty("text").ToString();
-            }
-            else
+             }
+            else if (note.IsFacebook)
             {
                 Text =  root.GetProperty("message").ToString();
+
+             }
+            else
+            {
+                throw new ApplicationException($"Type {Type} isn't appropriate");
 
             }
 
@@ -58,10 +63,7 @@ namespace FeedsBL.Models
             Created = note.Created;
         }
 
-        public override string ToString( )
-        {
-            return JsonSerializer.Serialize<NotificationADO>(this, JSO);
-        }
+      
         public  bool Equals(NotificationADO obj)
         {
             bool ret = Type == obj.Type &&  JMessage.Equals(obj.JMessage);
@@ -72,6 +74,10 @@ namespace FeedsBL.Models
             return Equals(obj as NotificationADO);
         }
 
+        public override int GetHashCode()
+        {
+            return Type.GetHashCode() + JMessage.GetHashCode();
+        }
     }
    
 }

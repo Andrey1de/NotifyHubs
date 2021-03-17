@@ -1,4 +1,4 @@
-<h1>Hello, world!</h1>
+<h1>Web Hooks Support</h1>
 
 
 <div class="content" role="main">
@@ -10,31 +10,25 @@
       <div class="form-group">
 
         <div>
-          <label for="typeNotify">
-            <select [(ngModel)]="typeNotify" class="form-control-lg">
-              <option value="Twitter" selected="true">Twitter</option>
-              <option value="Facebook" selected="true">Facebook</option>
-            </select>
-            &nbsp;:Type Notify
-          </label>
+          <label for="typeNotify">Type Notify:</label>
+          <select [(ngModel)]="typeNotify" class="form-control">
+            <option value="Twitter" selected="true">Twitter</option>
+            <option value="Facebook" selected="true">Facebook</option>
+          </select>
         </div>
  
-        <div>
-          <label class="form-control-lg" for="toAutoUpdate" style="border-color: white;">
-            <input type="checkbox" [(ngModel)]="toAutoUpdate"> 
-            &nbsp; Auto Update 
-          </label>
-        </div>
-
-       <label for="authorID">Author ID:</label>
+        <label for="toAutoUpdate">Auto Update </label>
+        <input type="checkbox" [(ngModel)]="toAutoUpdate"
+            class="form-control"> 
+        <label for="authorID">Author ID:</label>
         <input type="text" [(ngModel)]="authorID"
-               class="form-control-lg"> 
+               class="form-control"> 
         <label for="numID">ID:</label>
         <input type="text" [(ngModel)]="numID"
-               readonly="true" class="form-control-lg"> 
+               readonly="true" class="form-control"> 
         <div  class="sub-heading">Text Area Input Field</div>
         <textarea class ="text-area" [(ngModel)]="textMessage" 
-        cols="40" rows="6" class="form-control-lg"></textarea>
+        cols="40" rows="6" class="form-control"></textarea>
 
     <!-- <input type="text" formControlName="pairsDelim"
                > -->
@@ -51,28 +45,3 @@
                 [hidden]="!Ready">
           Try Insert
         </button>
-
-      <!-- </div> -->
-
-
-    
-    <br />
-    <br />
-    <!-- <app-money-table></app-money-table> -->
-
-  </div>
-</div>
-
-<!-- <p>Welcome to your new single-page application, built with:</p>
-<ul>
-  <li><a href='https://get.asp.net/'>ASP.NET Core</a> and <a href='https://msdn.microsoft.com/en-us/library/67ef8sbd.aspx'>C#</a> for cross-platform server-side code</li>
-  <li><a href='https://angular.io/'>Angular</a> and <a href='http://www.typescriptlang.org/'>TypeScript</a> for client-side code</li>
-  <li><a href='http://getbootstrap.com/'>Bootstrap</a> for layout and styling</li>
-</ul>
-<p>To help you get started, we've also set up:</p>
-<ul>
-  <li><strong>Client-side navigation</strong>. For example, click <em>Counter</em> then <em>Back</em> to return here.</li>
-  <li><strong>Angular CLI integration</strong>. In development mode, there's no need to run <code>ng serve</code>. It runs in the background automatically, so your client-side resources are dynamically built on demand and the page refreshes when you modify any file.</li>
-  <li><strong>Efficient production builds</strong>. In production mode, development-time features are disabled, and your <code>dotnet publish</code> configuration automatically invokes <code>ng build</code> to produce minified, ahead-of-time compiled JavaScript files.</li>
-</ul>
-<p>The <code>ClientApp</code> subdirectory is a standard Angular CLI application. If you open a command prompt in that directory, you can run any <code>ng</code> command (e.g., <code>ng test</code>), or use <code>npm</code> to install extra packages into it.</p> -->

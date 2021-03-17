@@ -1,40 +1,35 @@
-﻿using System;
-using System.ComponentModel.DataAnnotations;
+﻿//using AJP;
+//using Newtonsoft.Json;
+using System;
+using System.Dynamic;
+using System.Reflection;
+using System.Text;
 using System.Text.Json;
-using FeedsBL.Models;
 namespace FeedsBL.Models
 {
+
     public class Notification
     {
         const string Facebook = "Facebook";
         const string Twitter = "Twitter";
-        public readonly Guid Uid;
+        public readonly Guid Uid = Guid.NewGuid();
         public readonly string RandomString;
-        public static readonly JsonSerializerOptions JSO;
+        private static readonly JsonSerializerOptions JSO =
+                new JsonSerializerOptions() { WriteIndented = true };
 
-        static Notification()
-        {
-            JSO = new JsonSerializerOptions() { WriteIndented = true };
-        }
         public Notification()
         {
-            var uid = Guid.NewGuid();
-
-            //RandomString = uid.ToString().Replace("-", string.Empty)
-            //    .Replace("+", string.Empty).Substring(0, 8).ToLower();
-            RandomString = Convert.ToBase64String(uid.ToByteArray()).Substring(0, 10).ToLower();
+              RandomString = Convert.ToBase64String(Uid.ToByteArray()).Substring(0, 10).ToLower();
         }
+
+     
         public Notification(string type, object body)
             : this()
         {
-            type = (type.StartsWith("face", StringComparison.InvariantCultureIgnoreCase)) ?
-                Facebook : Twitter;
-              
-              ID = 0;
-            JBody = JsonSerializer.Serialize(body,JSO);
+            Body = body;
+            JMessage = JsonSerializer.Serialize(body, JSO);
 
-            Body = JsonSerializer.Deserialize<object>(JBody);
-
+    
             Type = type;
             Created = DateTime.Now;
         }
@@ -46,22 +41,21 @@ namespace FeedsBL.Models
         public bool Compare(Notification that)
         {
             if (that.Type != Type) return false;
-            if (that.JBody == JBody) return true;
+            if (that.JMessage == JMessage) 
+                return true;
             return true;
         }
 
         public override string ToString()
         {
-            return JBody;
+            return JMessage;
         }
 
-        public int ID { get; set; } = 0;
         public string Type { get; set; } = "";
 
-        public object Body { get; private set; } = new object();
-        public string JBody { get; private set; } = "{}";
+      public object Body { get; private set; } 
+        public string JMessage { get; private set; } = "{}";
         public DateTime Created { get; set; } = DateTime.Now;
     }
-
-
+   
 }

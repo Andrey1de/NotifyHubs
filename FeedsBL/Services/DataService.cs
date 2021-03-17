@@ -15,13 +15,13 @@ namespace FeedsBL
     public interface IDataService
     {
 
-        public Notification[] List();
-        public Notification Get(int id);
-        public bool TryInsert(string type, object jbody, out Notification outNote);
-        public bool Remove(int id);
-    
+        public NotificationADO[] List();
+        public NotificationADO Get(Guid guid);
+        public bool TryInsert(string type, object JMessage, out NotificationADO outNote);
+       public bool Remove(Guid guid);
 
-
+        public int Count { get;  }
+        int NumAllWords { get; }
     }
 
 
@@ -32,7 +32,8 @@ namespace FeedsBL
         readonly string BaseStoreDirectory; 
 
 
-        readonly ConcurrentDictionary<int, Notification> dictionary = new ConcurrentDictionary<int, Notification>();
+        readonly ConcurrentDictionary<Guid, NotificationADO> dictionary = 
+                            new ConcurrentDictionary<Guid, NotificationADO>();
         public DataService(IConfiguration config,
             ILogger<DataService> log)
         {
@@ -49,24 +50,29 @@ namespace FeedsBL
             }
         }
 
-        public Notification[] List()
+        public NotificationADO[] List()
         {
             var ret = dictionary.Values.ToArray() ;
             return ret;
         }
+        public int Count => 
+                    dictionary.Count;
 
-        public Notification Get(int id)
+        public int NumAllWords =>
+                dictionary.Sum(p => p.Value.NumberOfWords);
+
+        public NotificationADO Get(Guid guid)
         {
-            Notification value = null;
+            NotificationADO value = null;
 
-            if (dictionary.TryGetValue(id, out value))
+            if (dictionary.TryGetValue(guid, out value))
             {
                 return value;
             }
             return null;
         }
 
-        public  bool TryInsert(string type, object body, out  Notification outNote)
+        public  bool TryInsert(string type, object body, out NotificationADO outNote)
         {
             type = ("" + type).Trim().ToLower();
             outNote = null;
@@ -76,35 +82,41 @@ namespace FeedsBL
             }
 
 
-            Notification newNote = new Notification(type,body);
+            Notification note = new Notification(type, body);
+            NotificationADO newNote = new NotificationADO( note);
             //Get All with creation time bigger than Now - 60 sec
-            IEnumerable<Notification> lastValues = dictionary.Values
-                  .Where(p => p.Created >= DateTime.Now - TimeSpan.FromSeconds(60));
+            NotificationADO[] lastValues = dictionary.Values
+                  .Where(p => p.Created >= DateTime.Now - TimeSpan.FromSeconds(60)).ToArray();
             //If exists same notify
-            Notification sameValue = lastValues.FirstOrDefault(p => newNote.Compare(p));
-            if (sameValue != default(Notification))
+            // Notification sameValue = lastValues.FirstOrDefault(p => newNote.Compare(p));
+            for (int i = 0; i < lastValues.Length; i++)
             {
-                 outNote = sameValue;
-                Log.LogInformation($"Notify Retrieved:{outNote.FileName}  :");
-                Log.LogInformation($"{outNote.JBody}");
-                return false; ;
-            }
-            newNote.ID = (dictionary.Count > 0) ? (dictionary.Keys.Max() + 1) : 1 ;
-            while(!dictionary.TryAdd(newNote.ID, newNote))
-            {
-                newNote.ID++;
-            }
-            outNote = newNote;
-            if (StoreNotification(newNote) != null) { 
-            }
-            return true;
+                var p = lastValues[i];
+                if (newNote.Type == p.Type &&
+                    newNote.JMessage == p.JMessage)
+                {
+                    outNote = p;
+                    Log.LogInformation($"Notify Retrieved:{outNote.FileName}  :");
+                    Log.LogInformation($"{outNote.ToString()}");
 
+                    return false;
+                }
+            }
+       
+     
+            dictionary.TryAdd(newNote.Uid, newNote);
+            outNote = newNote;
+            if (StoreNotification(newNote) != null) {
+                return true;
+            }
+
+            return false;
         }
 
         static object _lockTryCreateDir = new object();
 
 
-        private Exception StoreNotification(Notification notify)
+        private Exception StoreNotification(NotificationADO notify)
         {
             string saveDir = null;
             try
@@ -114,20 +126,25 @@ namespace FeedsBL
                    
                     if(!TryCreateDir(notify, out saveDir))
                     {
-                        throw new ApplicationException($"TryCreateDir({notify.JBody} failed");
+                        throw new ApplicationException($"TryCreateDir({notify.JMessage} failed");
                     }
 
                  }
                 notify.FileName = Path.Combine(saveDir, notify.RandomString + ".notification.json");
 
-                File.WriteAllText(notify.FileName, notify.JBody);
+                File.WriteAllText(notify.FileName, notify. JMessage);
                 Log.LogInformation($"Notify Stored:{notify.FileName} stored :");
-                Log.LogInformation($"{notify.JBody}");
+                Log.LogInformation($"{notify.JMessage}");
+       
+                var notificationSummary = new NotificationSummary(notify);
+                var  fileName = notify.FileName.Replace(".json", ".summary.json");
+                File.WriteAllText(fileName, notificationSummary.ToString());
 
             }
             catch (Exception ex)
             {
                 Log.LogError($"Error{ex.StackTrace}");
+                //Rewind Directory
                 if (!string.IsNullOrWhiteSpace(saveDir) &&   Directory.Exists(saveDir))
                 {
                     try
@@ -148,7 +165,7 @@ namespace FeedsBL
         static int _numDirTwitter = 0;
         static int _numDirFacebook = 0;
      
-        private bool TryCreateDir(Notification notify, out string saveDir)
+        private bool TryCreateDir(NotificationADO notify, out string saveDir)
         {
             string base0 = Path.Combine(BaseStoreDirectory, notify.Type);
             if (!Directory.Exists(base0))
@@ -179,10 +196,10 @@ namespace FeedsBL
 
             }
             idDir++;
-            saveDir = Path.Combine(BaseStoreDirectory,notify.Type , idDir.ToString("D4"));
-            if (!Directory.Exists(saveDir))
+            saveDir =  Path.Combine(BaseStoreDirectory,notify.Type , idDir.ToString("D4"));
+            if (!Directory.Exists(notify.FileName))
             {
-                Directory.CreateDirectory(saveDir);
+                Directory.CreateDirectory(notify.FileName);
                 return true;
     
             }
@@ -190,12 +207,26 @@ namespace FeedsBL
             return false;
         }
 
-        public bool Remove(int id)
+        public bool Remove(Guid guid)
         {
-            Notification note;
-            return dictionary.TryRemove(id, out note);
+            NotificationADO note;
+            return dictionary.TryRemove(guid, out note);
         }
 
+        NotificationADO IDataService.Get(Guid guid)
+        {
+            throw new NotImplementedException();
+        }
+
+        bool IDataService.TryInsert(string type, object JMessage, out NotificationADO outNote)
+        {
+            throw new NotImplementedException();
+        }
+
+        bool IDataService.Remove(Guid guid)
+        {
+            throw new NotImplementedException();
+        }
     }
 
 

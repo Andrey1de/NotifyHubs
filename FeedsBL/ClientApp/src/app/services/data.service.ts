@@ -29,5 +29,14 @@ export class DataService {
     let ret = await this.http.post<any>
         (url,body,{headers: this.headers}).toPromise();
     return ret;
+  } 
+  public  async  gstRandomText$ ( ) 
+  : Promise<any> {
+    let url = `http://www.randomtext.me/api/` ;
+    let body = await this.http.get<any>
+        (url,{headers: this.headers}).toPromise();
+    var ret = body.text_out.replace(/<p>/gi, '')
+    .replace(/<\/p>/gi, '').replace(/Lorem ipsum /gi, '');
+    return ret;
   }
 }

@@ -8,65 +8,75 @@ import { DataService } from '../services/data.service';
   styleUrls: ['./home.component.css']
 })
 export class HomeComponent implements OnInit{
-  form = this.fb.group({
-    typeNotify: new FormControl('Twitter'),//, Validators.required],
-    authorID : new FormControl(1234567890),
-    textMessage : new FormControl('',[Validators.required]) , 
-    numID : new FormControl(12758280876666)
-  });
-
+  // form = this.fb.group({
+  //   typeNotify: new FormControl('Twitter'),//, Validators.required],
+  //   authorID : new FormControl(getRandomID()),
+  //   textMessage : new FormControl('',[Validators.required]) , 
+  //   numID : new FormControl(getRandomID())
+  // });
+  typeNotify: string = 'Twitter';
+  authorID: string = getRandomID();
+  textMessage: string = '...........';
+  numID: string = getRandomID();
+  toAutoUpdate : boolean = true;
   @Input('Ready') Ready: boolean = false;
   constructor(private fb: FormBuilder,
     private dataSvc: DataService) {
   
   }
-  ngOnInit(): void {
+  async ngOnInit() {
     this.Ready = true;
+    var str  = await this.dataSvc.gstRandomText$();
+    this.textMessage=str;
 
   }
 
-  get f() { return this.form.controls; }
+ // get f() { return this.form.controls; }
   async onTryInsert(event){
-    let typeNotify = this.f.typeNotify.value;
-
-    let body = (typeNotify == "Twitter") 
+    this.Ready = false;
+    if(this.toAutoUpdate){
+      this.authorID = getRandomID().toString();
+      this.numID = getRandomID().toString();                                  
+      this.textMessage  = await this.dataSvc.gstRandomText$();
+    }
+      let body = (this.typeNotify == "Twitter") 
                 ? this.getTwitter() 
                 : this.getFacebook();
-
-    var ret = await  this.dataSvc.tryInsertNotify$(typeNotify,body);
    
+    var ret = await  this.dataSvc.tryInsertNotify$(this.typeNotify,body);
+    this.Ready = true;
+ 
   }
 
+ 
   getTwitter() : any {
-    let authorID = this.f.authorID.value;
-    let textMessage = this.f.textMessage.value;
-
     let obj = {data : {}};
     obj.data = {... TemplateTwitter.data};
-    obj.data["author_id"] = authorID;
+    obj.data["author_id"] = this.authorID;
     obj.data["created_at"] = new Date().toISOString();
-    let id = getRandomInt(100000000000, 200000000000);
-    obj.data["id"] = id
-    this.f.numID.setValue(id.toString());
+    obj.data["text"] = this.textMessage;
+    obj.data["id"] = this.numID;
     return obj;
   }
 
   getFacebook() : any {
-    let authorID = this.f.authorID.value;
-    let textMessage = this.f.textMessage.value;
 
     let obj = {...TemplateFacebook};
     obj.from = {...TemplateFacebook.from};
-    obj.from.id = authorID;
-    obj.message = textMessage;
+    obj.from.id = this.authorID;
+    obj.message = this.textMessage;
     obj.created_time = new Date().toISOString();
-    let id = '' + authorID + '_' + 
-        getRandomInt(10000000000000,  400000000000000);
-    obj.id = id;
-    this.f.numID.setValue(id);                                  
+    obj.id =   this.numID;
     return obj;
+
   }
 
+}
+
+
+
+function getRandomID() : string{
+  return getRandomInt(100000000, 999999999);
 }
 
 function getRandomInt(min, max) {
@@ -79,12 +89,12 @@ const  TemplateTwitter=
   "data": {
     "author_id": "2244994945",
     "created_at": "2020-06-24T16:28:14.000Z",
-     "id": "1275828087666679809",
+    "id": "1275828087666679809",
     "lang": "en",
-    "possibly_sensitive": false,
+     "possibly_sensitive": false,
     "source": "Twitter Web App",
     "text": "Learn how to create a sentiment score for your Tweets with Microsoft Azure, Python, and Twitter Developer Labs recent search functionality.\nhttps://t.co/IKM3zo6ngu"
-  }
+   }
 };
 const TemplateFacebook = 
 {
@@ -92,7 +102,7 @@ const TemplateFacebook =
   "from": {
     "name": "Jay P Jeanne",
     "id": "126577551217199"
-  },
+  },  
   "id": "126577551217199_122842541590700",
   "source": "Facebook Web App",
   "message": "Hello",

@@ -37,22 +37,22 @@ namespace FeedsBL.Controllers
         [Route("list")]
         public ActionResult<object[]> List()
         {
-            var ret = Dal.List().Select(p=>p.Body).ToArray();
+            var ret = Dal.List().Select(p=>p.GetBody()).ToArray();
             return Ok(ret);
          }
 
         // GET api/<NotificationController>/5
         [HttpGet()]
         [Route("{id}")]
-        public ActionResult<object> Get (int id)
+        public ActionResult<object> Get (Guid guid)
         {
-            Notification notify = Dal.Get(id);
+            NotificationADO notify = Dal.Get(guid);
 
             if (notify != null)
             {
-                return Ok(notify.Body);
+                return Ok(notify.JMessage);
             }
-            return NotFound(id);
+            return NotFound(guid);
         }
 
      //   static object _lockInsert = new object();
@@ -63,16 +63,17 @@ namespace FeedsBL.Controllers
         {
          //   lock (_lockInsert)
            // {
-                Notification notify = null;
+                NotificationADO notify = null;
                 try
                 {
                     Dal.TryInsert(type, body, out notify);
-                    return Ok(notify.Body);
+                    return Ok(notify.JMessage);
                 }
                 catch (Exception ex)
                 {
                     Log.LogError(ex.StackTrace);
-                    throw ex;
+                return this.NoContent();
+                   // throw ex;
                 }
          //   }
      
@@ -83,17 +84,19 @@ namespace FeedsBL.Controllers
         // DELETE api/<NotificationController>/5
         [HttpDelete()]
         [Route("delete/{id}")]
-        public ActionResult Delete(int id)
+        public ActionResult Delete(string guid)
         {
-            if (Dal.Remove(id))
+            Guid uid = new Guid(guid);
+
+            if (Dal.Remove(uid))
             {
-                Log.LogInformation($"Delete {id} OK");
+                Log.LogInformation($"Delete {uid.ToString()} OK");
 
                 return Ok();
             }
-            Log.LogInformation($"Delete {id} FAILED");
+            Log.LogInformation($"Delete {uid.ToString()} FAILED");
 
-            return NotFound();  
+            return NotFound();
         }
     }
 }
